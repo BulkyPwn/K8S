@@ -1,4 +1,4 @@
-﻿module k8s-demo
+﻿﻿module k8s-demo
 
 go 1.21
 

@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 "net/http"
@@ -12,7 +12,6 @@ corev1 "k8s.io/api/core/v1"
 
 type ServiceHandler struct{}
 
-// List 列出 Service
 func (h *ServiceHandler) List(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -42,7 +41,6 @@ items = append(items, gin.H{
 c.JSON(http.StatusOK, model.Success(gin.H{"total": len(items), "items": items}))
 }
 
-// Detail 详情
 func (h *ServiceHandler) Detail(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -57,7 +55,6 @@ return
 c.JSON(http.StatusOK, model.Success(s))
 }
 
-// Create 创建
 func (h *ServiceHandler) Create(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -77,7 +74,6 @@ return
 c.JSON(http.StatusOK, model.Success(result))
 }
 
-// Delete 删除
 func (h *ServiceHandler) Delete(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -109,11 +105,12 @@ func externalIPs(s corev1.Service) string {
 if len(s.Spec.ExternalIPs) > 0 {
 return s.Spec.ExternalIPs[0]
 }
-if s.Status.LoadBalancer.Ingress != nil {
-if s.Status.LoadBalancer.Ingress[0].IP != "" {
-return s.Status.LoadBalancer.Ingress[0].IP
+if len(s.Status.LoadBalancer.Ingress) > 0 {
+ing := s.Status.LoadBalancer.Ingress[0]
+if ing.IP != "" {
+return ing.IP
 }
-return s.Status.LoadBalancer.Ingress[0].Hostname
+return ing.Hostname
 }
 return "<none>"
 }

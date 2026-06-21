@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 "io"
@@ -22,7 +22,8 @@ CheckOrigin: func(r *http.Request) bool { return true },
 func (h *ExecHandler) Exec(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
-fail(c, http.StatusBadRequest, err.Error())
+// 此时还没有升级 WS，可以安全返回 JSON
+c.JSON(http.StatusBadRequest, gin.H{"code": 500, "message": err.Error()})
 return
 }
 ns := c.Param("namespace")
@@ -35,7 +36,7 @@ cmd = []string{"/bin/sh"}
 
 conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 if err != nil {
-fail(c, http.StatusInternalServerError, err.Error())
+// upgrader 内部已写错误响应，不再重复写
 return
 }
 defer conn.Close()
@@ -79,9 +80,16 @@ type wsTerminal struct {
 conn          *websocket.Conn
 mu            sync.Mutex
 width, height uint16
+resizeCh      chan remotecommand.TerminalSize
+startOnce     sync.Once
+}
+
+func (t *wsTerminal) init() {
+t.resizeCh = make(chan remotecommand.TerminalSize, 4)
 }
 
 func (t *wsTerminal) Read(p []byte) (int, error) {
+t.startOnce.Do(t.init)
 for {
 _, data, err := t.conn.ReadMessage()
 if err != nil {
@@ -93,12 +101,19 @@ continue
 switch data[0] {
 case 1: // resize
 if len(data) >= 5 {
-t.width = uint16(data[1])<<8 | uint16(data[2])
-t.height = uint16(data[3])<<8 | uint16(data[4])
+w := uint16(data[1])<<8 | uint16(data[2])
+h := uint16(data[3])<<8 | uint16(data[4])
+t.width = w
+t.height = h
+// 非阻塞发送 resize 事件
+select {
+case t.resizeCh <- remotecommand.TerminalSize{Width: w, Height: h}:
+default:
+}
 }
 continue
-default: // 输入
-n := copy(p, data)
+default: // 输入：跳过首字节（类型标记）
+n := copy(p, data[1:])
 return n, nil
 }
 }
@@ -115,10 +130,18 @@ return len(p), nil
 }
 
 func (t *wsTerminal) Next() *remotecommand.TerminalSize {
-if t.width == 0 {
+t.startOnce.Do(t.init)
+// 首次返回当前尺寸（如已设置），之后阻塞等待 resize
+select {
+case sz, ok := <-t.resizeCh:
+if !ok {
 return nil
 }
-return &remotecommand.TerminalSize{Width: t.width, Height: t.height}
+return &sz
+default:
+// channel 为空时，返回 nil 表示暂无 resize
+}
+return nil
 }
 
 var _ = io.EOF

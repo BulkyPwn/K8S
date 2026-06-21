@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 "net/http"
@@ -12,7 +12,6 @@ corev1 "k8s.io/api/core/v1"
 
 type NamespaceHandler struct{}
 
-// List 列出 Namespace
 func (h *NamespaceHandler) List(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -41,7 +40,6 @@ items = append(items, gin.H{
 c.JSON(http.StatusOK, model.Success(gin.H{"total": len(items), "items": items}))
 }
 
-// Create 创建
 func (h *NamespaceHandler) Create(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -65,7 +63,6 @@ return
 c.JSON(http.StatusOK, model.Success(result))
 }
 
-// Delete 删除
 func (h *NamespaceHandler) Delete(c *gin.Context) {
 cs, err := getActive()
 if err != nil {

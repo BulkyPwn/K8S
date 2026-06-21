@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 "net/http"
@@ -11,7 +11,6 @@ corev1 "k8s.io/api/core/v1"
 
 type NodeHandler struct{}
 
-// List 列出 Node
 func (h *NodeHandler) List(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -42,7 +41,6 @@ items = append(items, gin.H{
 c.JSON(http.StatusOK, model.Success(gin.H{"total": len(items), "items": items}))
 }
 
-// Detail 详情
 func (h *NodeHandler) Detail(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -69,17 +67,16 @@ return "NotReady"
 return "Unknown"
 }
 
+// nodeRole 直接查询 labels map 来判断节点角色
 func nodeRole(n corev1.Node) string {
-for k := range n.Labels {
-if k == "kubernetes.io/role" {
-return n.Labels[k]
+if role, ok := n.Labels["kubernetes.io/role"]; ok {
+return role
 }
 if _, ok := n.Labels["node-role.kubernetes.io/control-plane"]; ok {
 return "control-plane"
 }
 if _, ok := n.Labels["node-role.kubernetes.io/master"]; ok {
 return "master"
-}
 }
 return "worker"
 }

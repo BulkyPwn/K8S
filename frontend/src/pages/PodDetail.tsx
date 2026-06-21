@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Descriptions, Segmented, Spin, Tag, Typography } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
@@ -55,7 +55,7 @@ export default function PodDetail() {
         options={[
           { label: '日志', value: 'logs' },
           { label: '终端', value: 'terminal' },
-          { label: 'YAML', value: 'yaml' },
+          { label: 'JSON', value: 'yaml' },
           { label: '容器', value: 'containers' },
         ]}
         value={tab}

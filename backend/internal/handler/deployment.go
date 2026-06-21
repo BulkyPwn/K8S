@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 "net/http"
@@ -14,7 +14,6 @@ corev1 "k8s.io/api/core/v1"
 
 type DeploymentHandler struct{}
 
-// List 列出 Deployment
 func (h *DeploymentHandler) List(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -29,10 +28,14 @@ return
 }
 items := make([]gin.H, 0, len(list.Items))
 for _, d := range list.Items {
+replicas := int32(0)
+if d.Spec.Replicas != nil {
+replicas = *d.Spec.Replicas
+}
 items = append(items, gin.H{
 "name":       d.Name,
 "namespace":  d.Namespace,
-"ready":      strconv.Itoa(int(d.Status.ReadyReplicas)) + "/" + strconv.Itoa(int(*d.Spec.Replicas)),
+"ready":      strconv.Itoa(int(d.Status.ReadyReplicas)) + "/" + strconv.Itoa(int(replicas)),
 "upToDate":   d.Status.UpdatedReplicas,
 "available":  d.Status.AvailableReplicas,
 "age":        model.TimeFormat(d.CreationTimestamp.Time),
@@ -44,7 +47,6 @@ items = append(items, gin.H{
 c.JSON(http.StatusOK, model.Success(gin.H{"total": len(items), "items": items}))
 }
 
-// Detail 详情
 func (h *DeploymentHandler) Detail(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -59,7 +61,6 @@ return
 c.JSON(http.StatusOK, model.Success(d))
 }
 
-// Create 创建
 func (h *DeploymentHandler) Create(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -79,7 +80,6 @@ return
 c.JSON(http.StatusOK, model.Success(result))
 }
 
-// Update 更新（全量 YAML）
 func (h *DeploymentHandler) Update(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -99,7 +99,6 @@ return
 c.JSON(http.StatusOK, model.Success(result))
 }
 
-// Delete 删除
 func (h *DeploymentHandler) Delete(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -113,7 +112,6 @@ return
 c.JSON(http.StatusOK, model.Success(nil))
 }
 
-// Scale 弹性伸缩
 func (h *DeploymentHandler) Scale(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -135,7 +133,6 @@ return
 c.JSON(http.StatusOK, model.Success(gin.H{"replicas": r}))
 }
 
-// Restart 重启（通过 rollout restart 等价：改 template annotation）
 func (h *DeploymentHandler) Restart(c *gin.Context) {
 cs, err := getActive()
 if err != nil {
@@ -166,7 +163,6 @@ imgs = append(imgs, c.Image)
 return imgs
 }
 
-// 为更新做准备：容器列表
 func deploymentContainers(d appsv1.Deployment) []gin.H {
 result := make([]gin.H, 0)
 for _, c := range d.Spec.Template.Spec.Containers {

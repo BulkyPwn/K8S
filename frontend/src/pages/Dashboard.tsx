@@ -14,13 +14,15 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [overview, setOverview] = useState<ClusterOverview | null>(null)
   const [nodes, setNodes] = useState<Node[]>([])
+  const [namespaceCount, setNamespaceCount] = useState(0)
 
   const load = async () => {
     setLoading(true)
     try {
-      const [ov, nd] = await Promise.all([api.clusterOverview(), api.nodes()])
+      const [ov, nd, ns] = await Promise.all([api.clusterOverview(), api.nodes(), api.namespaces()])
       setOverview(ov as any)
       setNodes((nd as any).items)
+      setNamespaceCount((ns as any).items.length)
     } catch {
       // ignore
     } finally {
@@ -85,7 +87,7 @@ export default function Dashboard() {
           <Card><Statistic title="运行中 Pod" value={overview.runningPods} valueStyle={{ color: '#3f8600' }} prefix={<CheckCircleOutlined />} /></Card>
         </Col>
         <Col span={6}>
-          <Card><Statistic title="命名空间数" value={nodes.length} prefix={<CloudServerOutlined />} /></Card>
+          <Card><Statistic title="命名空间数" value={namespaceCount} prefix={<CloudServerOutlined />} /></Card>
         </Col>
       </Row>
 
