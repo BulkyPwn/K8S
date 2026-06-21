@@ -1,0 +1,5 @@
+﻿* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+.scroll-y { overflow-y: auto; }
+.terminal-box { background: #000; padding: 8px; border-radius: 4px; }
